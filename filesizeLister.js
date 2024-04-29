@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-// フォルダ内のすべてのファイルとサブフォルダを再帰的に処理する関数
+let filePaths = [];
+
 function processFolder(folderPath, parentPath = '') {
   fs.readdir(folderPath, (err, files) => {
     if (err) {
@@ -19,11 +20,9 @@ function processFolder(folderPath, parentPath = '') {
         }
 
         if (stats.isDirectory()) {
-          // サブフォルダの場合、再帰的に処理
           const folderName = path.join(parentPath, file);
           processFolder(filePath, folderName);
         } else {
-          // ファイルの場合、ファイルパスとサイズを保存
           const fileName = path.join(parentPath, file);
           filePaths.push({ name: fileName, size: stats.size });
         }
@@ -36,26 +35,22 @@ function processFolder(folderPath, parentPath = '') {
   });
 }
 
-// 引数でフォルダパスを指定
-const folderPath = process.argv[2];
-const filePaths = [];
-
-// フォルダ内のすべてのファイルとサブフォルダを再帰的に処理
-processFolder(folderPath);
-
-// ファイルのサイズで降順にソートして出力する関数
 function checkAndOutput() {
-  // 全てのファイルが処理された後にサイズで降順にソートして出力
   filePaths.sort((a, b) => b.size - a.size);
   filePaths.forEach(file => {
-    let sizeStr;
-    if (file.size > 1024 * 1024) {
-      sizeStr = (file.size / (1024 * 1024)).toFixed(2) + " MB";
-    } else if (file.size > 1024) {
-      sizeStr = (file.size / 1024).toFixed(2) + " kB";
-    } else {
-      sizeStr = file.size + " B";
-    }
+    let sizeStr = formatSize(file.size);
     console.log(`${file.name}: ${sizeStr}`);
   });
 }
+
+function formatSize(size) {
+  if (size > 1024 * 1024) {
+    return (size / (1024 * 1024)).toFixed(2) + " MB";
+  } else if (size > 1024) {
+    return (size / 1024).toFixed(2) + " kB";
+  } else {
+    return size + " B";
+  }
+}
+
+module.exports = { listFileSizes: processFolder };
